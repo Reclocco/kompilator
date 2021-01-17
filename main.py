@@ -67,8 +67,6 @@ def debug_end(comment):
 # stała
 def make_number(number, register):
     my_code = ''
-    print('MAKING NUMBER')
-    print(number)
 
     while number > 0:
         if number % 2 == 0:
@@ -96,10 +94,21 @@ def make_variable(name, lineno):
 def make_temp_variable():
     global memory_idx
     temp_id = "&TEMP" + str(memory_idx)
+    is_iterator[temp_id] = True
     make_variable(temp_id, -1)
     is_initiated[temp_id] = True
 
     return temp_id
+
+
+def make_iterator(name, lineno):
+    global memory_idx
+
+    is_iterator[name] = True
+    make_variable(name, lineno)
+    is_initiated[name] = True
+
+    return name
 
 
 # tablica
@@ -143,12 +152,13 @@ def fuse_variable_address(name, lineno):
 def fuse_variable_initialization(name, lineno):
     if name not in is_initiated:
         raise Exception("Error: variable " + name + ' not declared, in line: ' + lineno)
+    if name in is_iterator:
+        raise Exception("Error: variable " + name + ' is iterator, in line: ' + lineno)
+
 
 
 # znajdź zmienna
 def get_variable_idx(name, lineno):
-    print('GETTING VARIABLE IDX')
-    print(name)
     if name in variables:
         return variables[name]
     else:
@@ -165,8 +175,6 @@ def get_array_idx(name, lineno):
 
 # ładuj zmienna albo liczbe do rejestru
 def get_to_reg(x, register, lineno):
-    print("GETTING VAL TO REG")
-    print(x)
     if x[0] == "var":
         fuse_variable_initialization(x[1], lineno)
 
@@ -183,8 +191,6 @@ def get_to_reg(x, register, lineno):
 
 # znajdź adres zmiennej albo tablicy
 def get_address(var, lineno):
-    print("GETTING ADDRES")
-    print(var)
     if var[0] == "var":
         fuse_variable_address(var[1], lineno)
 
@@ -193,7 +199,6 @@ def get_address(var, lineno):
                debug_end("LOAD_VAR_ADDR")
 
     elif var[0] == "arr":
-        print("IM GETTING TAB CELL ADDRESS")
         fuse_array_address(var[1], lineno)
         arr_idx = var[2]
         mem_start, arr_alpha, arr_omega = arrays[var[1]]
@@ -307,22 +312,15 @@ def labels_to_jumps(my_code):
 
     curr_line = 0
     for line in my_code.split("\n"):
-        print(line)
         labeled_line = re.search("#LABEL[0-9]+#", line)
-        print(labeled_line)
 
         if labeled_line:
             label_id = int(labeled_line.group()[6:-1])
-            print("LABEL ID ", labeled_line.group()[6:-1])
-
             labels[label_id] = curr_line
-
             line = re.sub("#LABEL[0-9]+#", "", line)
 
         cleaned_up_pre.append(line)
         curr_line += 1
-
-    print("DONE WITH LABELS")
 
     curr_line = 0
     for line in cleaned_up_pre:
@@ -355,11 +353,9 @@ def p_command_last(p):
 ############ w rejestrze A zapisuje adres do jakiej zmiennej przypisuje, w rejestrze B przypisywaną wartość
 def p_command_assign(p):
     '''command : identifier ASSIGN expression SEMICOLON'''
-    print("I START ASSIGN")
     var = p[1]
     value = p[3]
     line = str(p.lineno(1))
-    print("ASSIGNING: ", var)
     p[0] = debug_start("ASSIGN") + value + get_address(var, line) + \
            "STORE B A\n" + debug_end("ASSIGN")
 
@@ -380,7 +376,7 @@ def p_command_write(p):
     '''command : WRITE identifier SEMICOLON'''
     name = p[2]
     line = str(p.lineno(2))
-    fuse_variable_initialization(name, line)
+    fuse_variable_initialization(name[1], line)
     p[0] = debug_start("WRITE") + get_address(name, line) + \
            "PUT A\n" + debug_end("WRITE")
 
@@ -389,7 +385,6 @@ def p_command_write(p):
 def p_expression_value(p):
     '''expression : value'''
     number = p[1]
-    print("VALUE: ", number)
     line = str(p.lineno(1))
     p[0] = debug_start("EXPRESSION_VALUE") + get_to_reg(number, "B", line) + \
            debug_end("EXPRESSION_VALUE")
@@ -598,7 +593,7 @@ def p_iterator(p):
     '''iterator : ID'''
     id = p[1]
     line = str(p.lineno(1))
-    make_variable(id, line)
+    make_iterator(id, line)
     p[0] = id
     is_initiated[id] = True
 
@@ -612,7 +607,6 @@ def p_command_for_to(p):
     for_end = p[6]
     commands = p[8]
     line = str(p.lineno(1))
-    print("FOR: ", for_end, for_start, iterator, commands)
 
     p[0] = debug_start("FOR") + get_to_reg(for_end, "E", line) + \
         get_address(("var", for_end_var), line) + "STORE E A\n" + \
@@ -659,5 +653,5 @@ try:
     fw = open(sys.argv[2], "w")
     fw.write(parsed)
 except Exception as e:
-    print("PARSER EXCEPTION: ", e)
+    print(e)
     exit()
