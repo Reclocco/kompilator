@@ -48,7 +48,7 @@ arrays = {}
 labels = []
 
 # no właśnie, co ja w ogóle robie
-co_ja_w_ogole_robie = 1
+co_ja_w_ogole_robie = 0
 
 
 def debug_start(comment):
@@ -127,7 +127,7 @@ def unmake_variable(name):
 def fuse_array_address(name, lineno):
     if name not in arrays:
         if name in variables:
-            raise Exception("Error: invalid use of array  " + name + ' in line: ' + lineno)
+            raise Exception("Error: invalid use of variable " + name + ' in line: ' + lineno)
         else:
             raise Exception("Error: name " + name + ' not declared, in line: ' + lineno)
 
@@ -135,7 +135,7 @@ def fuse_array_address(name, lineno):
 def fuse_variable_address(name, lineno):
     if name not in variables:
         if name in arrays:
-            raise Exception("Error: invalid use of variable " + name + ' in line: ' + lineno)
+            raise Exception("Error: invalid use of array " + name + ' in line: ' + lineno)
         else:
             raise Exception("Error: name " + name + ' not declared, in line: ' + lineno)
 
@@ -169,14 +169,16 @@ def get_to_reg(x, register, lineno):
     print(x)
     if x[0] == "var":
         fuse_variable_initialization(x[1], lineno)
-        return debug_start("LOAD_VAR") + \
-               get_address(x, lineno) + \
-               "LOAD " + register + " A\n" + \
-               debug_end("LOAD_VAR")
+
     elif x[0] == "num":
         return debug_start("LOAD_CONST") + \
                make_number(x[1], register) + \
                debug_end("LOAD_CONST")
+
+    return debug_start("LOAD_VAR") + \
+           get_address(x, lineno) + \
+           "LOAD " + register + " A\n" + \
+           debug_end("LOAD_VAR")
 
 
 # znajdź adres zmiennej albo tablicy
@@ -191,14 +193,15 @@ def get_address(var, lineno):
                debug_end("LOAD_VAR_ADDR")
 
     elif var[0] == "arr":
+        print("IM GETTING TAB CELL ADDRESS")
+        fuse_array_address(var[1], lineno)
         arr_idx = var[2]
-        fuse_array_address(var, lineno)
-        mem_start, arr_alpha, arr_omega = arrays[var]
+        mem_start, arr_alpha, arr_omega = arrays[var[1]]
 
         return debug_start("LOAD_ARR_ADDR") + \
                get_to_reg(arr_idx, "A", lineno) + \
                make_number(arr_alpha, "C") + \
-               make_number(arr_idx, "D") + \
+               make_number(mem_start, "D") + \
                "SUB A C" + "\n" + "ADD A D" + "\n" + \
                debug_end("LOAD_TAB_ADDR")
 
@@ -352,6 +355,7 @@ def p_command_last(p):
 ############ w rejestrze A zapisuje adres do jakiej zmiennej przypisuje, w rejestrze B przypisywaną wartość
 def p_command_assign(p):
     '''command : identifier ASSIGN expression SEMICOLON'''
+    print("I START ASSIGN")
     var = p[1]
     value = p[3]
     line = str(p.lineno(1))
@@ -376,6 +380,7 @@ def p_command_write(p):
     '''command : WRITE identifier SEMICOLON'''
     name = p[2]
     line = str(p.lineno(2))
+    fuse_variable_initialization(name, line)
     p[0] = debug_start("WRITE") + get_address(name, line) + \
            "PUT A\n" + debug_end("WRITE")
 
@@ -384,6 +389,7 @@ def p_command_write(p):
 def p_expression_value(p):
     '''expression : value'''
     number = p[1]
+    print("VALUE: ", number)
     line = str(p.lineno(1))
     p[0] = debug_start("EXPRESSION_VALUE") + get_to_reg(number, "B", line) + \
            debug_end("EXPRESSION_VALUE")
