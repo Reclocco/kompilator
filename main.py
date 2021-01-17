@@ -207,7 +207,7 @@ def get_address(var, lineno):
 # main
 def p_program(p):
     '''program : DECLARE declarations BEGIN commands END'''
-    p[0] = p[4] + "HALT"
+    p[0] = labels_to_jumps(p[4]) + "HALT"
 
 
 # var pierwsze w deklaracjach
@@ -304,24 +304,31 @@ def labels_to_jumps(my_code):
 
     curr_line = 0
     for line in my_code.split("\n"):
+        print(line)
         labeled_line = re.search("#LABEL[0-9]+#", line)
+        print(labeled_line)
 
         if labeled_line:
             label_id = int(labeled_line.group()[6:-1])
+            print("LABEL ID ", labeled_line.group()[6:-1])
+
             labels[label_id] = curr_line
+
             line = re.sub("#LABEL[0-9]+#", "", line)
 
         cleaned_up_pre.append(line)
         curr_line += 1
 
+    print("DONE WITH LABELS")
+
     curr_line = 0
     for line in cleaned_up_pre:
-        jump_line = re.search("#JUMP[0-9]+", line)
+        jump_line = re.search("#JUMP[0-9]+#", line)
 
         if jump_line:
-            jump_id = int(jump_line.group()[6:-1])
+            jump_id = int(jump_line.group()[5:-1])
             jump_where = labels[jump_id]
-            line = re.sub("#JUMP[0-9]+",
+            line = re.sub("#JUMP[0-9]+#",
                           str(jump_where - curr_line), line)
 
         cleaned_up_post += line + "\n"
