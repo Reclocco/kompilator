@@ -152,8 +152,15 @@ def fuse_variable_address(name, lineno):
 def fuse_variable_initialization(name, lineno):
     if name not in is_initiated:
         raise Exception("Error: variable " + name + ' not declared, in line: ' + lineno)
+
+
+def fuse_iterator_assign(name, lineno):
     if name in is_iterator:
         raise Exception("Error: variable " + name + ' is iterator, in line: ' + lineno)
+
+
+def p_error(p):
+    raise Exception("Error: name " + str(p.value) + " not recognized, in line " + str(p.lineno))
 
 
 
@@ -185,7 +192,7 @@ def get_to_reg(x, register, lineno):
 
     return debug_start("LOAD_VAR") + \
            get_address(x, lineno) + \
-           "LOAD " + register + " A\n" + \
+           "LOAD " + register + " a\n" + \
            debug_end("LOAD_VAR")
 
 
@@ -195,7 +202,7 @@ def get_address(var, lineno):
         fuse_variable_address(var[1], lineno)
 
         return debug_start("LOAD_VAR_ADDR") + \
-               make_number(variables[var[1]], "A") + \
+               make_number(variables[var[1]], "a") + \
                debug_end("LOAD_VAR_ADDR")
 
     elif var[0] == "arr":
@@ -204,10 +211,10 @@ def get_address(var, lineno):
         mem_start, arr_alpha, arr_omega = arrays[var[1]]
 
         return debug_start("LOAD_ARR_ADDR") + \
-               get_to_reg(arr_idx, "A", lineno) + \
-               make_number(arr_alpha, "C") + \
-               make_number(mem_start, "D") + \
-               "SUB A C" + "\n" + "ADD A D" + "\n" + \
+               get_to_reg(arr_idx, "a", lineno) + \
+               make_number(arr_alpha, "c") + \
+               make_number(mem_start, "d") + \
+               "SUB a c" + "\n" + "ADD a d" + "\n" + \
                debug_end("LOAD_TAB_ADDR")
 
 
@@ -356,8 +363,9 @@ def p_command_assign(p):
     var = p[1]
     value = p[3]
     line = str(p.lineno(1))
+    fuse_iterator_assign(var, line)
     p[0] = debug_start("ASSIGN") + value + get_address(var, line) + \
-           "STORE B A\n" + debug_end("ASSIGN")
+           "STORE b a\n" + debug_end("ASSIGN")
 
     is_initiated[var[1]] = True
 
@@ -367,8 +375,9 @@ def p_command_read(p):
     '''command : READ identifier SEMICOLON'''
     name = p[2]
     line = str(p.lineno(2))
+    is_initiated[name[1]] = True
     p[0] = debug_start("READ") + get_address(name, line) + \
-           "GET A\n" + debug_end("READ")
+           "GET a\n" + debug_end("READ")
 
 
 # pisanie
@@ -378,7 +387,14 @@ def p_command_write(p):
     line = str(p.lineno(2))
     fuse_variable_initialization(name[1], line)
     p[0] = debug_start("WRITE") + get_address(name, line) + \
-           "PUT A\n" + debug_end("WRITE")
+           "PUT a\n" + debug_end("WRITE")
+
+
+def p_command_write_num(p):
+    '''command : WRITE NUM SEMICOLON'''
+    number = p[2]
+    p[0] = debug_start("WRITE") + make_number(number, "a") + \
+           "PUT a\n" + debug_end("WRITE")
 
 
 ############ działania
@@ -386,7 +402,7 @@ def p_expression_value(p):
     '''expression : value'''
     number = p[1]
     line = str(p.lineno(1))
-    p[0] = debug_start("EXPRESSION_VALUE") + get_to_reg(number, "B", line) + \
+    p[0] = debug_start("EXPRESSION_VALUE") + get_to_reg(number, "b", line) + \
            debug_end("EXPRESSION_VALUE")
 
 
@@ -396,8 +412,8 @@ def p_expression_plus(p):
     number_1 = p[1]
     number_2 = p[3]
     line = str(p.lineno(1))
-    p[0] = debug_start("ADDING") + get_to_reg(number_1, "B", line) + \
-           get_to_reg(number_2, "C", line) + "ADD B C\n" + debug_end("ADDING")
+    p[0] = debug_start("ADDING") + get_to_reg(number_1, "b", line) + \
+           get_to_reg(number_2, "c", line) + "ADD b c\n" + debug_end("ADDING")
 
 
 # NIE UŻYWAMY REJESTRU A
@@ -406,8 +422,8 @@ def p_expression_minus(p):
     number_1 = p[1]
     number_2 = p[3]
     line = str(p.lineno(1))
-    p[0] = debug_start("SUBTRACTING") + get_to_reg(number_1, "B", line) + \
-           get_to_reg(number_2, "C", line) + "SUB B C\n" + \
+    p[0] = debug_start("SUBTRACTING") + get_to_reg(number_1, "b", line) + \
+           get_to_reg(number_2, "c", line) + "SUB b c\n" + \
            debug_end("SUBTRACTING")
 
 
@@ -418,9 +434,9 @@ def p_expression_mult(p):
     number_2 = p[3]
     line = str(p.lineno(1))
 
-    p[0] = debug_start("MULTIPLYING") + "RESET B\n" + \
-           get_to_reg(number_2, "C", line) + get_to_reg(number_1, "D", line) + \
-           "JZERO C 5\n" + "ADD B D\n" + "DEC C\n" + \
+    p[0] = debug_start("MULTIPLYING") + "RESET b\n" + \
+           get_to_reg(number_2, "c", line) + get_to_reg(number_1, "d", line) + \
+           "JZERO c 5\n" + "ADD b d\n" + "DEC c\n" + \
            "JUMP -3\n" + debug_end("MULTIPLYING")
 
 
@@ -431,11 +447,11 @@ def p_expression_div(p):
     number_2 = p[3]
     line = str(p.lineno(1))
 
-    p[0] = debug_start("DIVISION") + get_to_reg(number_1, "B", line) + \
-           get_to_reg(number_2, "C", line) + "RESET D\n" + "RESET E\n" + "JZERO C 13\n" + \
-           "ADD D C\n" + "RESET F\n" + "ADD F B\n" + "SUB F D\n" + "JZERO F 2\n" + \
-           "JUMP 5\n" + "ADD F D\n" + "SUB F B\n" + "JZERO F 2\n" + "JUMP 3\n" + "INC E\n" + \
-           "JUMP -11\n" + "RESET B\n" + "ADD B E\n" + debug_end("DIVISION")
+    p[0] = debug_start("DIVISION") + get_to_reg(number_1, "b", line) + \
+           get_to_reg(number_2, "c", line) + "RESET d\n" + "RESET e\n" + "JZERO c 13\n" + \
+           "ADD d c\n" + "RESET f\n" + "ADD f b\n" + "SUB f d\n" + "JZERO f 2\n" + \
+           "JUMP 5\n" + "ADD f d\n" + "SUB f b\n" + "JZERO f 2\n" + "JUMP 3\n" + "INC e\n" + \
+           "JUMP -11\n" + "RESET b\n" + "ADD b e\n" + debug_end("DIVISION")
 
 
 # NIE UŻYWAMY REJESTRU A
@@ -445,11 +461,11 @@ def p_expression_mod(p):
     number_2 = p[3]
     line = str(p.lineno(1))
 
-    p[0] = debug_start("MODULO") + get_to_reg(number_1, "B", line) + \
-           get_to_reg(number_2, "C", line) + "RESET D\n" + "RESET E\n" + "JZERO C x\n" + \
-           "ADD D C\n" + "ADD E B\n" + "SUB E D\n" + "JZERO E 2\n" + \
-           "JUMP 5\n" + "ADD E D\n" + "SUB E B\n" + "JZERO E 2\n" + "JUMP 2\n" + \
-           "JUMP -11\n" + "SUB D C\n" + "SUB B D\n" + debug_end("MODULO")
+    p[0] = debug_start("MODULO") + get_to_reg(number_1, "b", line) + \
+           get_to_reg(number_2, "c", line) + "RESET d\n" + "RESET e\n" + "JZERO c 14\n" + \
+           "ADD d c\n" + "ADD e b\n" + "SUB e d\n" + "JZERO e 2\n" + \
+           "JUMP 5\n" + "ADD e d\n" + "SUB e b\n" + "JZERO e 2\n" + "JUMP 2\n" + \
+           "JUMP -11\n" + "SUB d c\n" + "SUB b d\n" + "JUMP 2\n" + "RESET b\n" + debug_end("MODULO")
 
 
 # WARUNKI
@@ -461,11 +477,11 @@ def p_condition_eq(p):
     code_labels, code_jumps = prepare_labels(2)
 
     p[0] = (debug_start("EQUALS") + \
-            get_to_reg(number_1, "B", line) + \
-            get_to_reg(number_2, "C", line) + \
-            "RESET D\n" + "ADD D B\n" + "SUB D C\n" + \
-            "JZERO D 2\n" + "JUMP " + code_jumps[1] + "\n" + \
-            "ADD D C\n" + "SUB D B\n" + "JZERO D 2\n" + \
+            get_to_reg(number_1, "b", line) + \
+            get_to_reg(number_2, "c", line) + \
+            "RESET d\n" + "ADD d b\n" + "SUB d c\n" + \
+            "JZERO d 2\n" + "JUMP " + code_jumps[1] + "\n" + \
+            "ADD d c\n" + "SUB d b\n" + "JZERO d 2\n" + \
             "JUMP " + code_jumps[1] + "\n" + debug_end("EQUALS"),
             code_labels[1])
 
@@ -478,11 +494,11 @@ def p_condition_neq(p):
     code_labels, code_jumps = prepare_labels(2)
 
     p[0] = (debug_start("NOT EQUALS") + \
-            get_to_reg(number_1, "B", line) + \
-            get_to_reg(number_2, "C", line) + \
-            "RESET D\n" + "ADD D B\n" + "SUB D C\n" + \
-            "JZERO D 2\n" + "JUMP 4\n" + "ADD D C\n" +
-            "SUB D B\n" + "JZERO D " + code_jumps[1] + "\n" +
+            get_to_reg(number_1, "b", line) + \
+            get_to_reg(number_2, "c", line) + \
+            "RESET d\n" + "ADD d b\n" + "SUB d c\n" + \
+            "JZERO d 2\n" + "JUMP 4\n" + "ADD d c\n" +
+            "SUB d b\n" + "JZERO d " + code_jumps[1] + "\n" +
             debug_end("NOT EQUALS"), code_labels[1])
 
 
@@ -494,10 +510,10 @@ def p_condition_lt(p):
     code_labels, code_jumps = prepare_labels(2)
 
     p[0] = (debug_start("LESS THAN") + \
-            get_to_reg(number_1, "B", line) + \
-            get_to_reg(number_2, "C", line) + \
-            "RESET D\n" + "ADD D C\n" + "SUB D B\n" + \
-            "JZERO D " + code_jumps[1] + "\n" +
+            get_to_reg(number_1, "b", line) + \
+            get_to_reg(number_2, "c", line) + \
+            "RESET d\n" + "ADD d c\n" + "SUB d b\n" + \
+            "JZERO d " + code_jumps[1] + "\n" +
             debug_end("LESS THAN"), code_labels[1])
 
 
@@ -509,10 +525,10 @@ def p_condition_gt(p):
     code_labels, code_jumps = prepare_labels(2)
 
     p[0] = (debug_start("GREATER THAN") + \
-            get_to_reg(number_1, "B", line) + \
-            get_to_reg(number_2, "C", line) + \
-            "RESET D\n" + "ADD D B\n" + "SUB D C\n" + \
-            "JZERO D " + code_jumps[1] + "\n" +
+            get_to_reg(number_1, "b", line) + \
+            get_to_reg(number_2, "c", line) + \
+            "RESET d\n" + "ADD d b\n" + "SUB d c\n" + \
+            "JZERO d " + code_jumps[1] + "\n" +
             debug_end("GREATER THAN"), code_labels[1])
 
 
@@ -524,11 +540,11 @@ def p_condition_leq(p):
     code_labels, code_jumps = prepare_labels(2)
 
     p[0] = (debug_start("LESS EQ THAN") + \
-            get_to_reg(number_1, "B", line) + \
-            get_to_reg(number_2, "C", line) + \
-            "RESET D\n" + "ADD D C\n" + "SUB D B\n" + \
-            "JZERO D 2\n" + "JUMP x\n" + "ADD D B\n" + \
-            "SUB D C\n" + "JZERO D 2\n" + "JUMP " + code_jumps[1] + "\n" + \
+            get_to_reg(number_1, "b", line) + \
+            get_to_reg(number_2, "c", line) + \
+            "RESET d\n" + "ADD d c\n" + "SUB d b\n" + \
+            "JZERO d 2\n" + "JUMP 5\n" + "ADD d b\n" + \
+            "SUB d c\n" + "JZERO d 2\n" + "JUMP " + code_jumps[1] + "\n" + \
             debug_end("LESS EQ THAN"), code_labels[1])
 
 
@@ -540,11 +556,11 @@ def p_condition_geq(p):
     code_labels, code_jumps = prepare_labels(2)
 
     p[0] = (debug_start("LESS EQ THAN") + \
-            get_to_reg(number_1, "B", line) + \
-            get_to_reg(number_2, "C", line) + \
-            "RESET D\n" + "ADD D B\n" + "SUB D C\n" + \
-            "JZERO D 2\n" + "JUMP x\n" + "ADD D C\n" + \
-            "SUB D B\n" + "JZERO D 2\n" + "JUMP " + code_jumps[1] + "\n" + \
+            get_to_reg(number_1, "b", line) + \
+            get_to_reg(number_2, "c", line) + \
+            "RESET d\n" + "ADD d b\n" + "SUB d c\n" + \
+            "JZERO d 2\n" + "JUMP 5\n" + "ADD d c\n" + \
+            "SUB d b\n" + "JZERO d 2\n" + "JUMP " + code_jumps[1] + "\n" + \
             debug_end("LESS EQ THAN"), code_labels[1])
 
 
@@ -562,6 +578,7 @@ def p_command_if_else(p):
     condition = p[2]
     commands_if = p[4]
     commands_else = p[6]
+
     p[0] = debug_start("IF_ELSE") + condition[0] + \
         commands_if + condition[1] + \
         commands_else + debug_end("IF_ELSE")
@@ -579,9 +596,9 @@ def p_command_while(p):
 
 
 def p_command_repeat(p):
-    '''command : REPEAT commands UNTIL condition'''
-    condition = p[2]
-    commands = p[4]
+    '''command : REPEAT commands UNTIL condition SEMICOLON'''
+    condition = p[4]
+    commands = p[2]
     loop_jump, loop_label = prepare_labels(1)
     p[0] = debug_start("REPEAT") + loop_label[0] + \
            commands + condition[0] + "JUMP " + \
@@ -620,6 +637,8 @@ def p_command_for_to(p):
         "INC F\n" + "JUMP " + code_jumps[1] + "\n" + \
         code_labels[0] + debug_end("FOR")
 
+    unmake_variable(iterator)
+
 
 
 def p_command_for_downto(p):
@@ -632,17 +651,19 @@ def p_command_for_downto(p):
     commands = p[8]
     line = str(p.lineno(1))
 
-    p[0] = debug_start("FOR_DOWN") + get_to_reg(for_end, "E", line) + \
-           get_address(("var", for_end_var), line) + "STORE E A\n" + \
-           get_to_reg(for_start, "F", line) + \
-           get_address(("var", iterator), line) + "STORE F A\n" + \
-           code_labels[1] + get_to_reg(("var", for_end_var), "E", line) + \
-           get_to_reg(("var", iterator), "F", line) + \
-           "SUB F E\n" + "JZERO F 2\n" + \
+    p[0] = debug_start("FOR_DOWN") + get_to_reg(for_end, "e", line) + \
+           get_address(("var", for_end_var), line) + "STORE e a\n" + \
+           get_to_reg(for_start, "f", line) + \
+           get_address(("var", iterator), line) + "STORE f a\n" + \
+           code_labels[1] + get_to_reg(("var", for_end_var), "e", line) + \
+           get_to_reg(("var", iterator), "f", line) + \
+           "SUB f e\n" + "JZERO f 2\n" + \
            "JUMP " + code_jumps[0] + "\n" + commands + \
-           get_to_reg(("var", iterator), "F", line) + \
-           "DEC F\n" + "JUMP " + code_jumps[1] + "\n" + \
+           get_to_reg(("var", iterator), "f", line) + \
+           "DEC f\n" + "JUMP " + code_jumps[1] + "\n" + \
            code_labels[0] + debug_end("FOR_DOWN")
+
+    unmake_variable(iterator)
 
 
 parser = yacc.yacc()
