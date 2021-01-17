@@ -599,16 +599,17 @@ def p_command_for_to(p):
     for_end = p[6]
     commands = p[8]
     line = str(p.lineno(1))
+    print("FOR: ", for_end, for_start, iterator, commands)
 
     p[0] = debug_start("FOR") + get_to_reg(for_end, "E", line) + \
-        get_address((id, for_end_var), line) + "STORE E A\n" + \
+        get_address(("var", for_end_var), line) + "STORE E A\n" + \
         get_to_reg(for_start, "F", line) + \
-        get_address(("id", iterator), line) + "STORE F A\n" + \
-        code_labels[1] + get_to_reg(("id", for_end_var), "E", line) + \
-        get_to_reg(("id", iterator), "F", line) + \
+        get_address(("var", iterator), line) + "STORE F A\n" + \
+        code_labels[1] + get_to_reg(("var", for_end_var), "E", line) + \
+        get_to_reg(("var", iterator), "F", line) + \
         "SUB E F\n" + "JZERO E 2\n" + \
         "JUMP " + code_jumps[0] + "\n" + commands + \
-        get_to_reg(("id", iterator), "F", line) + \
+        get_to_reg(("var", iterator), "F", line) + \
         "INC F\n" + "JUMP " + code_jumps[1] + "\n" + \
         code_labels[0] + debug_end("FOR")
 
@@ -625,14 +626,14 @@ def p_command_for_downto(p):
     line = str(p.lineno(1))
 
     p[0] = debug_start("FOR_DOWN") + get_to_reg(for_end, "E", line) + \
-           get_address((id, for_end_var), line) + "STORE E A\n" + \
+           get_address(("var", for_end_var), line) + "STORE E A\n" + \
            get_to_reg(for_start, "F", line) + \
-           get_address(("id", iterator), line) + "STORE F A\n" + \
-           code_labels[1] + get_to_reg(("id", for_end_var), "E", line) + \
-           get_to_reg(("id", iterator), "F", line) + \
+           get_address(("var", iterator), line) + "STORE F A\n" + \
+           code_labels[1] + get_to_reg(("var", for_end_var), "E", line) + \
+           get_to_reg(("var", iterator), "F", line) + \
            "SUB F E\n" + "JZERO F 2\n" + \
            "JUMP " + code_jumps[0] + "\n" + commands + \
-           get_to_reg(("id", iterator), "F", line) + \
+           get_to_reg(("var", iterator), "F", line) + \
            "DEC F\n" + "JUMP " + code_jumps[1] + "\n" + \
            code_labels[0] + debug_end("FOR_DOWN")
 
