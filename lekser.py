@@ -1,18 +1,18 @@
 import ply.lex as lex
 
 tokens = (
-    'DECLARE', 'BEGIN', 'END', 'SEMICOLON',  	# 0 program
-    'NUM',  									# 1 liczby
-    'PLUS', 'MINUS', 'MULT', 'DIV', 'MOD',  	# 2 operatory
-    'EQ', 'NEQ', 'LT', 'GT', 'LEQ', 'GEQ',  	# 3 relacje
-    'ASSIGN',  									# 4 przypisania
-    'LBR', 'RBR', 'COLON',  					# 5 tablice
-    'IF', 'THEN', 'ELSE', 'ENDIF',  			# 6 warunki IF
-    'FOR', 'FROM', 'TO', 'DOWNTO', 'ENDFOR',  	# 7 FOR
-    'WHILE', 'DO', 'ENDWHILE',  				# 8 WHILE
-    'REPEAT', 'UNTIL'                           # 9 DO WHILE
-    'READ', 'WRITE',  							# 10 odczyt zapis
-    'ID'  										# 11 identyfikatory
+    'DECLARE', 'BEGIN', 'END', 'SEMICOLON', 'COMMA',  	# 0 program
+    'NUM',  									        # 1 liczby
+    'PLUS', 'MINUS', 'MULT', 'DIV', 'MOD',  	        # 2 operatory
+    'EQ', 'NEQ', 'LT', 'GT', 'LEQ', 'GEQ',  	        # 3 relacje
+    'ASSIGN',  									        # 4 przypisania
+    'LBR', 'RBR', 'COLON',  					        # 5 tablice
+    'IF', 'THEN', 'ELSE', 'ENDIF',  			        # 6 warunki IF
+    'FOR', 'FROM', 'TO', 'DOWNTO', 'ENDFOR',  	        # 7 FOR
+    'WHILE', 'DO', 'ENDWHILE',  				        # 8 WHILE
+    'REPEAT', 'UNTIL',                                   # 9 DO WHILE
+    'READ', 'WRITE',  							        # 10 odczyt zapis
+    'ID'  										        # 11 identyfikatory
 )
 
 # 0 PROGRAM
@@ -21,6 +21,7 @@ t_DECLARE = r'DECLARE'
 t_BEGIN = r'BEGIN'
 t_END = r'END'
 t_SEMICOLON = r';'
+t_COMMA = r','
 
 
 # 1 LICZBY
