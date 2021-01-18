@@ -446,8 +446,8 @@ def p_expression_mult(p):
     line = str(p.lineno(1))
 
     p[0] = debug_start("MULTIPLYING") + "RESET b\n" + \
-           get_to_reg(number_2, "c", line) + get_to_reg(number_1, "d", line) + \
-           "JZERO c 4\n" + "ADD b d\n" + "DEC c\n" + \
+           get_to_reg(number_2, "e", line) + get_to_reg(number_1, "f", line) + \
+           "JZERO e 4\n" + "ADD b f\n" + "DEC e\n" + \
            "JUMP -3\n" + debug_end("MULTIPLYING")
 
 
