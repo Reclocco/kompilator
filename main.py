@@ -183,7 +183,6 @@ def get_array_idx(name, lineno):
 
 # ładuj zmienna albo liczbe do rejestru
 def get_to_reg(x, register, lineno):
-    print("GET TO REG ", x, register, variables)
     if x[0] == "var":
         fuse_variable_initialization(x[1], lineno)
 
@@ -445,7 +444,6 @@ def p_expression_mult(p):
     number_1 = p[1]
     number_2 = p[3]
     line = str(p.lineno(1))
-    print(get_to_reg(number_1, "c", line), number_1)
 
     p[0] = debug_start("MULTIPLYING") + "RESET b\n" + \
            get_to_reg(number_2, "c", line) + get_to_reg(number_1, "d", line) + \
@@ -615,8 +613,8 @@ def p_command_repeat(p):
     commands = p[2]
     loop_label, loop_jump = prepare_labels(1)
     p[0] = debug_start("REPEAT") + loop_label[0] + \
-           commands + condition[0] + "JUMP " + \
-           loop_jump[0] + "\n" + condition[1] + \
+           commands + condition[0] + "JUMP 2\n" + \
+           condition[1] + "JUMP " + loop_jump[0] + "\n" + \
            debug_end("REPEAT")
 
 
