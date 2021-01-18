@@ -228,7 +228,7 @@ def p_program(p):
 
 def p_program_no_declare(p):
     '''program : BEGIN commands END'''
-    p[0] = labels_to_jumps(p[4]) + "HALT"
+    p[0] = labels_to_jumps(p[2]) + "HALT"
 
 
 # var pierwsze w deklaracjach
