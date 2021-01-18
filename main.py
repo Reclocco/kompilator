@@ -326,7 +326,7 @@ def labels_to_jumps(my_code):
         if labeled_line:
             label_id = int(labeled_line.group()[6:-1])
             labels[label_id] = curr_line
-            line = re.sub("#LABEL[0-9]+#", "", line)
+            # line = re.sub("#LABEL[0-9]+#", "", line)
 
         cleaned_up_pre.append(line)
         curr_line += 1
@@ -349,6 +349,8 @@ def labels_to_jumps(my_code):
 
         first = False
         curr_line += 1
+
+    cleaned_up_post = re.sub("#LABEL[0-9]+#", "", cleaned_up_post)
 
     return cleaned_up_post
 
@@ -680,9 +682,9 @@ def p_command_for_downto(p):
            "SUB e f\n" + "JZERO e 2\n" + \
            "JUMP " + code_jumps[0] + "\n" + code_labels[2] + commands + \
            get_to_reg(("var", iterator), "f", line) + \
-           "JZERO f " + code_jumps[3] + "\n" + "DEC f\n" + get_address(("var", iterator), line) + "STORE f a\n" + \
+           "JZERO f " + code_jumps[0] + "\n" + "DEC f\n" + get_address(("var", iterator), line) + "STORE f a\n" + \
            "JUMP " + code_jumps[1] + "\n" + \
-           code_labels[0] + code_labels[3] + debug_end("FOR_DOWN")
+           code_labels[0] + debug_end("FOR_DOWN")
 
     unmake_variable(iterator)
 
