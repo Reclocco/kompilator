@@ -124,7 +124,7 @@ def make_array(name, alpha, omega, lineno):
 
     memory_idx += 1
     arrays[name] = (memory_idx, alpha, omega)
-    memory_idx += omega - alpha
+    memory_idx += omega - alpha + 1
 
 
 # unmaykr
@@ -183,6 +183,7 @@ def get_array_idx(name, lineno):
 
 # ładuj zmienna albo liczbe do rejestru
 def get_to_reg(x, register, lineno):
+    print("GET TO REG ", x, register, variables)
     if x[0] == "var":
         fuse_variable_initialization(x[1], lineno)
 
@@ -442,6 +443,7 @@ def p_expression_mult(p):
     number_1 = p[1]
     number_2 = p[3]
     line = str(p.lineno(1))
+    print(get_to_reg(number_1, "c", line), number_1)
 
     p[0] = debug_start("MULTIPLYING") + "RESET b\n" + \
            get_to_reg(number_2, "c", line) + get_to_reg(number_1, "d", line) + \
@@ -657,7 +659,7 @@ def p_command_for_to(p):
 
 def p_command_for_downto(p):
     '''command : FOR iterator FROM value DOWNTO value DO commands ENDFOR'''
-    code_labels, code_jumps = prepare_labels(3)
+    code_labels, code_jumps = prepare_labels(4)
     for_end_var = make_temp_variable()
     iterator = p[2]
     for_start = p[4]
@@ -678,9 +680,9 @@ def p_command_for_downto(p):
            "SUB e f\n" + "JZERO e 2\n" + \
            "JUMP " + code_jumps[0] + "\n" + code_labels[2] + commands + \
            get_to_reg(("var", iterator), "f", line) + \
-           "DEC f\n" + get_address(("var", iterator), line) + "STORE f a\n" + \
+           "JZERO f " + code_jumps[3] + "\n" + "DEC f\n" + get_address(("var", iterator), line) + "STORE f a\n" + \
            "JUMP " + code_jumps[1] + "\n" + \
-           code_labels[0] + debug_end("FOR_DOWN")
+           code_labels[0] + code_labels[3] + debug_end("FOR_DOWN")
 
     unmake_variable(iterator)
 
