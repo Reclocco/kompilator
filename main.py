@@ -226,6 +226,11 @@ def p_program(p):
     p[0] = labels_to_jumps(p[4]) + "HALT"
 
 
+def p_program_no_declare(p):
+    '''program : BEGIN commands END'''
+    p[0] = labels_to_jumps(p[4]) + "HALT"
+
+
 # var pierwsze w deklaracjach
 def p_declare_first_var(p):
     '''declarations : ID'''
