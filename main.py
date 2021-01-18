@@ -42,6 +42,7 @@ memory_idx = 1
 variables = {}
 is_initiated = {}
 is_iterator = {}
+variables["number1"] = 0
 # lista tablic
 arrays = {}
 # lista skoków
@@ -330,6 +331,7 @@ def labels_to_jumps(my_code):
         curr_line += 1
 
     curr_line = 0
+    first = True
     for line in cleaned_up_pre:
         jump_line = re.search("#JUMP[0-9]+#", line)
 
@@ -339,7 +341,13 @@ def labels_to_jumps(my_code):
             line = re.sub("#JUMP[0-9]+#",
                           str(jump_where - curr_line), line)
 
-        cleaned_up_post += line + "\n"
+        if first:
+            cleaned_up_post += line
+        else:
+            cleaned_up_post += "\n" + line
+
+        first = False
+        curr_line += 1
 
     return cleaned_up_post
 
@@ -393,7 +401,8 @@ def p_command_write(p):
 def p_command_write_num(p):
     '''command : WRITE NUM SEMICOLON'''
     number = p[2]
-    p[0] = debug_start("WRITE") + make_number(number, "a") + \
+    p[0] = debug_start("WRITE") + make_number(number, "b") + \
+           "RESET a\n" + "STORE b a\n" + \
            "PUT a\n" + debug_end("WRITE")
 
 
@@ -588,7 +597,7 @@ def p_command_while(p):
     '''command : WHILE condition DO commands ENDWHILE'''
     condition = p[2]
     commands = p[4]
-    loop_jump, loop_label = prepare_labels(1)
+    loop_label, loop_jump = prepare_labels(1)
     p[0] = debug_start("WHILE") + loop_label[0] + \
            condition[0] + commands + "JUMP " + \
            loop_jump[0] + "\n" + condition[1] + \
@@ -599,7 +608,7 @@ def p_command_repeat(p):
     '''command : REPEAT commands UNTIL condition SEMICOLON'''
     condition = p[4]
     commands = p[2]
-    loop_jump, loop_label = prepare_labels(1)
+    loop_label, loop_jump = prepare_labels(1)
     p[0] = debug_start("REPEAT") + loop_label[0] + \
            commands + condition[0] + "JUMP " + \
            loop_jump[0] + "\n" + condition[1] + \
@@ -625,16 +634,19 @@ def p_command_for_to(p):
     commands = p[8]
     line = str(p.lineno(1))
 
-    p[0] = debug_start("FOR") + get_to_reg(for_end, "E", line) + \
-        get_address(("var", for_end_var), line) + "STORE E A\n" + \
-        get_to_reg(for_start, "F", line) + \
-        get_address(("var", iterator), line) + "STORE F A\n" + \
-        code_labels[1] + get_to_reg(("var", for_end_var), "E", line) + \
-        get_to_reg(("var", iterator), "F", line) + \
-        "SUB E F\n" + "JZERO E 2\n" + \
+    p[0] = debug_start("FOR") + get_to_reg(for_end, "e", line) + \
+        get_address(("var", for_end_var), line) + "STORE e a\n" + \
+        get_to_reg(for_start, "f", line) + \
+        get_address(("var", iterator), line) + "STORE f a\n" + \
+        code_labels[1] + get_to_reg(("var", for_end_var), "e", line) + \
+        get_to_reg(("var", iterator), "f", line) + \
+        "SUB e f\n" + "JZERO e 2\n" + \
+        get_to_reg(("var", iterator), "f", line) + \
+        get_to_reg(("var", for_end_var), "e", line) + \
+        "SUB f e\n" + "JZERO f 2\n" + \
         "JUMP " + code_jumps[0] + "\n" + commands + \
-        get_to_reg(("var", iterator), "F", line) + \
-        "INC F\n" + "JUMP " + code_jumps[1] + "\n" + \
+        get_to_reg(("var", iterator), "f", line) + \
+        "INC f\n" + "JUMP " + code_jumps[1] + "\n" + \
         code_labels[0] + debug_end("FOR")
 
     unmake_variable(iterator)
@@ -658,6 +670,9 @@ def p_command_for_downto(p):
            code_labels[1] + get_to_reg(("var", for_end_var), "e", line) + \
            get_to_reg(("var", iterator), "f", line) + \
            "SUB f e\n" + "JZERO f 2\n" + \
+           "JUMP 5\n" + get_to_reg(("var", iterator), "f", line) + \
+           get_to_reg(("var", for_end_var), "e", line) + \
+           "SUB e f\n" + "JZERO e 2\n" + "JUMP 2\n" + \
            "JUMP " + code_jumps[0] + "\n" + commands + \
            get_to_reg(("var", iterator), "f", line) + \
            "DEC f\n" + "JUMP " + code_jumps[1] + "\n" + \
