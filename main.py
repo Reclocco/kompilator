@@ -646,7 +646,8 @@ def p_command_for_to(p):
         "SUB f e\n" + "JZERO f 2\n" + \
         "JUMP " + code_jumps[0] + "\n" + code_labels[2] + commands + \
         get_to_reg(("var", iterator), "f", line) + \
-        "INC f\n" + "JUMP " + code_jumps[1] + "\n" + \
+        "INC f\n" + get_address(("var", iterator)) + "STORE f a\n" + \
+        "JUMP " + code_jumps[1] + "\n" + \
         code_labels[0] + debug_end("FOR")
 
     unmake_variable(iterator)
@@ -676,7 +677,8 @@ def p_command_for_downto(p):
            "SUB e f\n" + "JZERO e 2\n" + \
            "JUMP " + code_jumps[0] + "\n" + code_labels[2] + commands + \
            get_to_reg(("var", iterator), "f", line) + \
-           "DEC f\n" + "JUMP " + code_jumps[1] + "\n" + \
+           "DEC f\n" + get_address(("var", iterator)) + "STORE f a\n" + \
+           "JUMP " + code_jumps[1] + "\n" + \
            code_labels[0] + debug_end("FOR_DOWN")
 
     unmake_variable(iterator)
