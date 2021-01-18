@@ -37,7 +37,7 @@ import re
 #   F: pętle
 
 # memory management
-memory_idx = 1
+memory_idx = 10
 # lista zmiennych
 variables = {}
 is_initiated = {}
@@ -371,7 +371,7 @@ def p_command_assign(p):
     var = p[1]
     value = p[3]
     line = str(p.lineno(1))
-    fuse_iterator_assign(var, line)
+    fuse_iterator_assign(var[1], line)
     p[0] = debug_start("ASSIGN") + value + get_address(var, line) + \
            "STORE b a\n" + debug_end("ASSIGN")
 
@@ -445,7 +445,7 @@ def p_expression_mult(p):
 
     p[0] = debug_start("MULTIPLYING") + "RESET b\n" + \
            get_to_reg(number_2, "c", line) + get_to_reg(number_1, "d", line) + \
-           "JZERO c 5\n" + "ADD b d\n" + "DEC c\n" + \
+           "JZERO c 4\n" + "ADD b d\n" + "DEC c\n" + \
            "JUMP -3\n" + debug_end("MULTIPLYING")
 
 
@@ -587,10 +587,11 @@ def p_command_if_else(p):
     condition = p[2]
     commands_if = p[4]
     commands_else = p[6]
+    code_label, code_jump = prepare_labels(1)
 
     p[0] = debug_start("IF_ELSE") + condition[0] + \
-        commands_if + condition[1] + \
-        commands_else + debug_end("IF_ELSE")
+        commands_if + "JUMP " + code_jump[0] + "\n" + condition[1] + \
+        commands_else + code_label[0] + debug_end("IF_ELSE")
 
 
 def p_command_while(p):
@@ -640,13 +641,13 @@ def p_command_for_to(p):
         get_address(("var", iterator), line) + "STORE f a\n" + \
         code_labels[1] + get_to_reg(("var", for_end_var), "e", line) + \
         get_to_reg(("var", iterator), "f", line) + \
-        "SUB e f\n" + "JZERO e " + code_jumps[2] + "\n" + \
+        "SUB e f\n" + "JZERO e 2\n" + "JUMP " + code_jumps[2] + "\n" + \
         get_to_reg(("var", iterator), "f", line) + \
         get_to_reg(("var", for_end_var), "e", line) + \
         "SUB f e\n" + "JZERO f 2\n" + \
         "JUMP " + code_jumps[0] + "\n" + code_labels[2] + commands + \
         get_to_reg(("var", iterator), "f", line) + \
-        "INC f\n" + get_address(("var", iterator)) + "STORE f a\n" + \
+        "INC f\n" + get_address(("var", iterator), line) + "STORE f a\n" + \
         "JUMP " + code_jumps[1] + "\n" + \
         code_labels[0] + debug_end("FOR")
 
@@ -677,7 +678,7 @@ def p_command_for_downto(p):
            "SUB e f\n" + "JZERO e 2\n" + \
            "JUMP " + code_jumps[0] + "\n" + code_labels[2] + commands + \
            get_to_reg(("var", iterator), "f", line) + \
-           "DEC f\n" + get_address(("var", iterator)) + "STORE f a\n" + \
+           "DEC f\n" + get_address(("var", iterator), line) + "STORE f a\n" + \
            "JUMP " + code_jumps[1] + "\n" + \
            code_labels[0] + debug_end("FOR_DOWN")
 
