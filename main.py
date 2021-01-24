@@ -457,17 +457,63 @@ def p_expression_mult(p):
 
 
 # NIE UŻYWAMY REJESTRU A
+# def p_expression_div(p):
+#     '''expression : value DIV value'''
+#     number_1 = p[1]
+#     number_2 = p[3]
+#     line = str(p.lineno(1))
+#
+#     p[0] = debug_start("DIVISION") + get_to_reg(number_1, "b", line) + \
+#            get_to_reg(number_2, "c", line) + "RESET d\n" + "RESET e\n" + "JZERO c 13\n" + \
+#            "ADD d c\n" + "RESET f\n" + "ADD f b\n" + "SUB f d\n" + "JZERO f 2\n" + \
+#            "JUMP 5\n" + "ADD f d\n" + "SUB f b\n" + "JZERO f 2\n" + "JUMP 3\n" + "INC e\n" + \
+#            "JUMP -11\n" + "RESET b\n" + "ADD b e\n" + debug_end("DIVISION")
+
+
+# DIVISOR/SCALED DIVISOR-   a
+# DIVIDEND-                 b
+# REMAIN-                   c
+# RESULT-                   d
+# MULTIPLE-                 e
+# CALC CHECK-               f
 def p_expression_div(p):
     '''expression : value DIV value'''
     number_1 = p[1]
     number_2 = p[3]
     line = str(p.lineno(1))
+    code_labels, code_jumps = prepare_labels(2)
 
-    p[0] = debug_start("DIVISION") + get_to_reg(number_1, "b", line) + \
-           get_to_reg(number_2, "c", line) + "RESET d\n" + "RESET e\n" + "JZERO c 13\n" + \
-           "ADD d c\n" + "RESET f\n" + "ADD f b\n" + "SUB f d\n" + "JZERO f 2\n" + \
-           "JUMP 5\n" + "ADD f d\n" + "SUB f b\n" + "JZERO f 2\n" + "JUMP 3\n" + "INC e\n" + \
-           "JUMP -11\n" + "RESET b\n" + "ADD b e\n" + debug_end("DIVISION")
+    p[0] = debug_start("DIVISION") + \
+        get_to_reg(number_2, "a", line) + \
+        "RESET d\n" + \
+        "JZERO a 23\n" + \
+        get_to_reg(number_1, "b", line) + \
+        "RESET c\n" + \
+        "ADD c b\n" + \
+        "RESET e\n" + \
+        "INC e\n" + \
+        "RESET f\n" + \
+        "ADD f b\n" + \
+        "SUB f a\n" + \
+        "JZERO f 4\n" + \
+        "SHL a\n" + \
+        "SHL e\n" + \
+        "JUMP -6\n" + \
+        "RESET f\n" + \
+        "INC f\n" + \
+        "ADD f a\n" + \
+        "SUB f b\n" + \
+        "JZERO f 3\n" + \
+        "SUB c a\n" + \
+        "ADD d e\n" + \
+        "SHR a\n" + \
+        "SHR e\n" + \
+        "JZERO e 2\n" + \
+        "JUMP -9" + \
+        "RESET b\n" + \
+        "ADD b d\n"
+
+
 
 
 # NIE UŻYWAMY REJESTRU A
