@@ -444,30 +444,34 @@ def p_expression_minus(p):
 
 
 # NIE UŻYWAMY REJESTRU A
+# def p_expression_mult(p):
+#     '''expression : value MULT value'''
+#     number_1 = p[1]
+#     number_2 = p[3]
+#     line = str(p.lineno(1))
+#
+#     p[0] = debug_start("MULTIPLYING") + "RESET b\n" + \
+#            get_to_reg(number_2, "e", line) + get_to_reg(number_1, "f", line) + \
+#            "JZERO e 4\n" + "ADD b f\n" + "DEC e\n" + \
+#            "JUMP -3\n" + debug_end("MULTIPLYING")
+
+
 def p_expression_mult(p):
     '''expression : value MULT value'''
     number_1 = p[1]
     number_2 = p[3]
     line = str(p.lineno(1))
 
-    p[0] = debug_start("MULTIPLYING") + "RESET b\n" + \
-           get_to_reg(number_2, "e", line) + get_to_reg(number_1, "f", line) + \
-           "JZERO e 4\n" + "ADD b f\n" + "DEC e\n" + \
-           "JUMP -3\n" + debug_end("MULTIPLYING")
-
-
-# NIE UŻYWAMY REJESTRU A
-# def p_expression_div(p):
-#     '''expression : value DIV value'''
-#     number_1 = p[1]
-#     number_2 = p[3]
-#     line = str(p.lineno(1))
-#
-#     p[0] = debug_start("DIVISION") + get_to_reg(number_1, "b", line) + \
-#            get_to_reg(number_2, "c", line) + "RESET d\n" + "RESET e\n" + "JZERO c 13\n" + \
-#            "ADD d c\n" + "RESET f\n" + "ADD f b\n" + "SUB f d\n" + "JZERO f 2\n" + \
-#            "JUMP 5\n" + "ADD f d\n" + "SUB f b\n" + "JZERO f 2\n" + "JUMP 3\n" + "INC e\n" + \
-#            "JUMP -11\n" + "RESET b\n" + "ADD b e\n" + debug_end("DIVISION")
+    p[0] = debug_start("MULTIPLYING") + \
+            get_to_reg(number_1, "b", line) + \
+            get_to_reg(number_2, "c", line) + \
+            "RESET d\n" + \
+            "JZERO b 6\n" + \
+            "JODD b 2\n" + \
+            "ADD d c\n" + \
+            "SHR a\n" + \
+            "SHL b\n" + \
+            "JUMP -5\n" + debug_end("MULTIPLYING")
 
 
 # DIVISOR/SCALED DIVISOR-   a
@@ -481,13 +485,12 @@ def p_expression_div(p):
     number_1 = p[1]
     number_2 = p[3]
     line = str(p.lineno(1))
-    code_labels, code_jumps = prepare_labels(2)
 
     p[0] = debug_start("DIVISION") + \
+        get_to_reg(number_1, "b", line) + \
         get_to_reg(number_2, "a", line) + \
         "RESET d\n" + \
         "JZERO a 23\n" + \
-        get_to_reg(number_1, "b", line) + \
         "RESET c\n" + \
         "ADD c b\n" + \
         "RESET e\n" + \
@@ -501,19 +504,17 @@ def p_expression_div(p):
         "JUMP -6\n" + \
         "RESET f\n" + \
         "INC f\n" + \
-        "ADD f a\n" + \
-        "SUB f b\n" + \
+        "ADD f c\n" + \
+        "SUB f a\n" + \
         "JZERO f 3\n" + \
         "SUB c a\n" + \
         "ADD d e\n" + \
         "SHR a\n" + \
         "SHR e\n" + \
         "JZERO e 2\n" + \
-        "JUMP -9" + \
+        "JUMP -10" + \
         "RESET b\n" + \
-        "ADD b d\n"
-
-
+        "ADD b d\n" + debug_end("MODULO")
 
 
 # NIE UŻYWAMY REJESTRU A
@@ -523,11 +524,35 @@ def p_expression_mod(p):
     number_2 = p[3]
     line = str(p.lineno(1))
 
-    p[0] = debug_start("MODULO") + get_to_reg(number_1, "b", line) + \
-           get_to_reg(number_2, "c", line) + "RESET d\n" + "RESET e\n" + "JZERO c 14\n" + \
-           "ADD d c\n" + "ADD e b\n" + "SUB e d\n" + "JZERO e 2\n" + \
-           "JUMP 5\n" + "ADD e d\n" + "SUB e b\n" + "JZERO e 2\n" + "JUMP 2\n" + \
-           "JUMP -11\n" + "SUB d c\n" + "SUB b d\n" + "JUMP 2\n" + "RESET b\n" + debug_end("MODULO")
+    p[0] = debug_start("MODULO") + \
+           get_to_reg(number_1, "b", line) + \
+           get_to_reg(number_2, "a", line) + \
+           "RESET d\n" + \
+           "JZERO a 23\n" + \
+           "RESET c\n" + \
+           "ADD c b\n" + \
+           "RESET e\n" + \
+           "INC e\n" + \
+           "RESET f\n" + \
+           "ADD f b\n" + \
+           "SUB f a\n" + \
+           "JZERO f 4\n" + \
+           "SHL a\n" + \
+           "SHL e\n" + \
+           "JUMP -6\n" + \
+           "RESET f\n" + \
+           "INC f\n" + \
+           "ADD f c\n" + \
+           "SUB f a\n" + \
+           "JZERO f 3\n" + \
+           "SUB c a\n" + \
+           "ADD d e\n" + \
+           "SHR a\n" + \
+           "SHR e\n" + \
+           "JZERO e 2\n" + \
+           "JUMP -10" + \
+           "RESET b\n" + \
+           "ADD b c\n" + debug_end("MODUO")
 
 
 # WARUNKI
