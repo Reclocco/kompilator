@@ -466,12 +466,15 @@ def p_expression_mult(p):
             get_to_reg(number_1, "b", line) + \
             get_to_reg(number_2, "c", line) + \
             "RESET d\n" + \
-            "JZERO b 6\n" + \
+            "JZERO b 7\n" + \
             "JODD b 2\n" + \
+            "JUMP 2\n" + \
             "ADD d c\n" + \
-            "SHR a\n" + \
-            "SHL b\n" + \
-            "JUMP -5\n" + debug_end("MULTIPLYING")
+            "SHR b\n" + \
+            "SHL c\n" + \
+            "JUMP -6\n" +\
+            "RESET b\n" + \
+            "ADD b d\n" + debug_end("MULTIPLYING")
 
 
 # DIVISOR/SCALED DIVISOR-   a
