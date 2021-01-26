@@ -152,7 +152,7 @@ def fuse_variable_address(name, lineno):
 
 def fuse_variable_initialization(name, lineno):
     if name not in is_initiated:
-        raise Exception("Error: variable " + name + ' not declared, in line: ' + lineno)
+        raise Exception("Error: variable " + name + ' not initialized, in line: ' + lineno)
 
 
 def fuse_iterator_assign(name, lineno):
@@ -493,8 +493,8 @@ def p_expression_div(p):
         get_to_reg(number_1, "b", line) + \
         get_to_reg(number_2, "a", line) + \
         "RESET d\n" + \
-        "JZERO a 23\n" + \
         "RESET c\n" + \
+        "JZERO a 22\n" + \
         "ADD c b\n" + \
         "RESET e\n" + \
         "INC e\n" + \
@@ -517,7 +517,7 @@ def p_expression_div(p):
         "JZERO e 2\n" + \
         "JUMP -10" + \
         "RESET b\n" + \
-        "ADD b d\n" + debug_end("MODULO")
+        "ADD b d\n" + debug_end("DIVISION")
 
 
 # NIE UŻYWAMY REJESTRU A
@@ -553,7 +553,7 @@ def p_expression_mod(p):
            "SHR a\n" + \
            "SHR e\n" + \
            "JZERO e 2\n" + \
-           "JUMP -10" + \
+           "JUMP -10\n" + \
            "RESET b\n" + \
            "ADD b c\n" + debug_end("MODUO")
 
@@ -660,7 +660,7 @@ def p_command_if(p):
     condition = p[2]
     commands = p[4]
     p[0] = debug_start("IF") + condition[0] + \
-        commands + condition[1] + debug_end("IF")
+        commands + condition[1] + "JUMP 1\n" + debug_end("IF")
 
 
 def p_command_if_else(p):
@@ -672,7 +672,7 @@ def p_command_if_else(p):
 
     p[0] = debug_start("IF_ELSE") + condition[0] + \
         commands_if + "JUMP " + code_jump[0] + "\n" + condition[1] + \
-        commands_else + code_label[0] + debug_end("IF_ELSE")
+        commands_else + code_label[0] + "JUMP 1\n" + debug_end("IF_ELSE")
 
 
 def p_command_while(p):
@@ -715,6 +715,15 @@ def p_command_for_to(p):
     for_end = p[6]
     commands = p[8]
     line = str(p.lineno(1))
+
+    if for_start[0] == "var":
+        if iterator[1] == for_start:
+            raise Exception("Error, iterator pętli użyty jako jej zakres")
+
+    if for_end[0] == "var":
+        if iterator[1] == for_end:
+            raise Exception("Error, iterator pętli użyty jako jej zakres")
+
 
     p[0] = debug_start("FOR") + get_to_reg(for_end, "e", line) + \
         get_address(("var", for_end_var), line) + "STORE e a\n" + \
